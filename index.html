@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Grand Master Darts</title>
+    <style>
+        :root { --bg: #121212; --card: #1e1e1e; --accent: #f39c12; --green: #27ae60; --red: #c0392b; --text: #e0e0e0; --blue: #2980b9; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
+        * { box-sizing: border-box; user-select: none; }
+
+        /* --- SETUP SCREEN --- */
+        #setup-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; width: 100%; padding: 20px; text-align: center; overflow-y: auto; }
+        .setup-group { background: var(--card); padding: 15px; border-radius: 10px; margin-bottom: 15px; width: 100%; max-width: 450px; border: 1px solid #333; }
+        h2 { color: var(--accent); margin-top: 0; }
+        label { display: block; margin: 10px 0 5px; text-align: left; font-size: 0.9rem; color: #aaa; }
+        select, input { width: 100%; padding: 10px; background: #333; border: 1px solid #555; color: white; border-radius: 5px; font-size: 1rem; margin-bottom: 5px; }
+        .btn-add { background: transparent; border: 1px dashed #555; color: #888; padding: 8px; width: 100%; cursor: pointer; margin-top: 5px; }
+        .btn-start { background: var(--accent); color: #000; font-weight: bold; padding: 15px 40px; border: none; border-radius: 30px; font-size: 1.5rem; margin-top: 20px; cursor: pointer; box-shadow: 0 0 20px rgba(243, 156, 18, 0.4); width: 100%; max-width: 400px; }
+
+        /* --- GAME SCREEN --- */
+        #game-screen { display: none; width: 100%; max-width: 600px; flex-direction: column; height: 100vh; }
+        
+        /* Top Info */
+        .match-info { display: flex; justify-content: space-between; padding: 8px 15px; background: #000; font-size: 0.85rem; color: #888; border-bottom: 1px solid #333; flex-shrink: 0; }
+        
+        /* Scoreboard (Dynamic) */
+        .scoreboard { 
+            display: flex; 
+            gap: 5px; 
+            padding: 10px; 
+            overflow-x: auto; /* Ha sok játékos van, görgethető */
+            flex: 1; /* Kitölti a helyet a középső részig */
+            align-items: flex-start;
+        }
+        .player-card { 
+            flex: 1; 
+            min-width: 100px; /* Hogy ne nyomódjon össze teljesen */
+            background: var(--card); 
+            border-radius: 8px; 
+            padding: 10px;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            position: relative; 
+            border: 2px solid transparent; 
+            transition: 0.3s; 
+        }
+        .player-card.active { border-color: var(--accent); background: #252525; box-shadow: inset 0 0 15px rgba(0,0,0,0.5); transform: scale(1.02); z-index: 10; }
+        .p-name { font-size: 1rem; color: #bbb; text-transform: uppercase; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        .p-score { font-size: 3rem; font-weight: bold; line-height: 1; margin: 5px 0; color: #fff; }
+        .active .p-score { color: var(--accent); }
+        .sets-legs { background: #333; padding: 2px 6px; border-radius: 4px; color: #fff; font-size: 0.75rem; margin-top: 5px; }
+        .checkout-box { background: var(--green); color: white; padding: 3px 6px; border-radius: 4px; font-weight: bold; font-size: 0.9rem; margin-top: 5px; display: none; width: 100%; text-align: center; }
+
+        /* Middle Section */
+        .mid-section { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5px; background: #181818; flex-shrink: 0; }
+        .darts-display { display: flex; gap: 15px; margin-bottom: 5px; }
+        .dart-slot { width: 50px; height: 50px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; border: 2px solid #444; color: #aaa; }
+        .dart-slot.filled { border-color: var(--accent); color: white; background: #444; }
+        .visit-score { color: var(--accent); font-size: 1.2rem; font-weight: bold; }
+
+        /* Controls */
+        .controls-area { background: #1e1e1e; padding: 8px; border-top: 1px solid #333; display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+        
+        .mod-row { display: flex; gap: 6px; height: 45px; }
+        .mod-btn { flex: 1; border: none; border-radius: 6px; font-weight: bold; font-size: 1.1rem; color: white; cursor: pointer; opacity: 0.3; transition: 0.2s; }
+        .mod-btn.active { opacity: 1; }
+        #btn-double { background: var(--red); }
+        #btn-triple { background: var(--green); }
+
+        /* Numpad 5 columns */
+        .numpad { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+        .num-btn { background: #3a3a3a; color: white; border: none; border-radius: 5px; padding: 12px 0; font-size: 1.3rem; font-weight: bold; cursor: pointer; }
+        .num-btn:active { background: #555; }
+        
+        /* BULL és MISS teljes szélesség */
+        .bull-btn { grid-column: span 5; background: #8e44ad; }
+        .miss-btn { grid-column: span 5; background: #c0392b; font-size: 1rem; padding: 8px 0; }
+
+        .action-row { display: flex; gap: 6px; margin-top: 5px; height: 50px; }
+        .act-btn { flex: 1; border: none; border-radius: 6px; font-weight: bold; color: white; cursor: pointer; font-size: 1rem; }
+        .btn-undo-dart { background: #7f8c8d; }
+        .btn-undo-round { background: #c0392b; font-size: 0.9rem; }
+        .btn-next { background: var(--accent); color: black; display: none; font-size: 1.2rem; animation: pulse 1.5s infinite; }
+        .btn-stats-toggle { background: var(--blue); width: 100%; padding: 10px; margin-top: 5px; border: none; border-radius: 5px; color: white; font-weight: bold; cursor: pointer; }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; overflow-y: auto; }
+        .modal-content { padding: 20px; max-width: 600px; margin: 0 auto; text-align: center; }
+        .close-modal { position: fixed; top: 20px; right: 20px; font-size: 2rem; color: var(--red); cursor: pointer; z-index: 101; }
+        
+        /* Stats Table */
+        table.stats-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+        .stats-table th, .stats-table td { border: 1px solid #444; padding: 8px; text-align: center; color: #ddd; }
+        .stats-table th { background: #333; color: var(--accent); }
+    </style>
+</head>
+<body>
+
+    <div id="setup-screen">
+        <h1>🎯 Grand Master Darts</h1>
+        
+        <div class="setup-group">
+            <h2>Játékosok</h2>
+            <div id="players-container">
+                </div>
+            <button class="btn-add" onclick="addPlayerInput()">+ Játékos hozzáadása</button>
+            <datalist id="saved-players"></datalist>
+        </div>
+
+        <div class="setup-group">
+            <h2>Szabályok</h2>
+            <div style="display:flex; gap:10px;">
+                <select id="start-score">
+                    <option value="501" selected>501</option>
+                    <option value="301">301</option>
+                </select>
+                <select id="checkout-mode">
+                    <option value="double" selected>Dupla (DO)</option>
+                    <option value="straight">Sima (SO)</option>
+                </select>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <input type="number" id="legs-per-set" value="3" min="1" placeholder="Leg / Set">
+                <input type="number" id="sets-to-win" value="1" min="1" placeholder="Set to Win">
+            </div>
+        </div>
+
+        <div class="setup-group">
+            <h2>Hangok (MP3)</h2>
+            <label>180: <input type="file" id="sound-180" accept="audio/*"></label>
+            <label>Win: <input type="file" id="sound-win" accept="audio/*"></label>
+            <label>Bust: <input type="file" id="sound-bust" accept="audio/*"></label>
+        </div>
+
+        <button class="btn-start" onclick="startGame()">MECCS START</button>
+    </div>
+
+    <div id="game-screen">
+        <div class="match-info">
+            <span id="match-config-display">501 DO</span>
+            <span id="match-status">Set 1 / Leg 1</span>
+        </div>
+
+        <div class="scoreboard" id="scoreboard-container">
+            </div>
+
+        <div class="mid-section">
+            <div class="darts-display">
+                <div class="dart-slot" id="d1"></div>
+                <div class="dart-slot" id="d2"></div>
+                <div class="dart-slot" id="d3"></div>
+            </div>
+            <div class="visit-score" id="visit-score">0</div>
+        </div>
+
+        <div class="controls-area">
+            <div class="mod-row">
+                <button id="btn-double" class="mod-btn" onclick="toggleMod(2)">DOUBLE</button>
+                <button id="btn-triple" class="mod-btn" onclick="toggleMod(3)">TRIPLE</button>
+            </div>
+
+            <div class="numpad" id="numpad">
+                </div>
+
+            <div class="action-row">
+                <button class="act-btn btn-undo-dart" onclick="undoDart()">JAVÍT</button>
+                <button class="act-btn btn-undo-round" id="btn-undo-round" onclick="undoRound()" style="display:none;">KÖR VISSZA</button>
+                <button class="act-btn btn-next" id="btn-next" onclick="commitTurn()">KÖVETKEZŐ</button>
+            </div>
+            <button class="btn-stats-toggle" onclick="showStats()">📊 Részletes Statisztika</button>
+        </div>
+    </div>
+
+    <div id="stats-modal" class="modal">
+        <span class="close-modal" onclick="closeStats()">&times;</span>
+        <div class="modal-content">
+            <h2 style="color:var(--accent)">Statisztikák</h2>
+            <div id="stats-content"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- ADATOK ---
+        const checkouts = {170:"T20 T20 BULL",167:"T20 T19 BULL",164:"T20 T18 BULL",161:"T20 T17 BULL",160:"T20 T20 D20",158:"T20 T20 D19",157:"T20 T19 D20",156:"T20 T20 D18",155:"T20 T19 D19",154:"T20 T18 D20",153:"T20 T19 D18",152:"T20 T20 D16",151:"T20 T17 D20",150:"T20 T18 D18",149:"T20 T19 D16",148:"T20 T16 D20",147:"T20 T17 D18",146:"T20 T18 D16",145:"T20 T15 D20",144:"T20 T20 D12",143:"T20 T17 D16",142:"T20 T14 D20",141:"T20 T19 D12",140:"T20 T16 D16",139:"T20 T13 D20",138:"T20 T18 D12",137:"T19 T16 D16",136:"T20 T20 D8",135:"T20 T15 D15",134:"T20 T14 D16",133:"T20 T19 D8",132:"T20 T16 D12",131:"T20 T13 D16",130:"T20 T18 D8",129:"T19 T16 D12",128:"T18 T14 D16",127:"T20 T17 D8",126:"T19 T19 D6",125:"T18 T13 D16",124:"T20 D16 D16",123:"T19 T16 D9",122:"T18 T20 D4",121:"T20 T15 D8",120:"T20 20 D20",119:"T19 T10 D16",118:"T20 18 D20",117:"T20 17 D20",116:"T20 16 D20",115:"T20 15 D20",114:"T20 14 D20",113:"T20 13 D20",112:"T20 12 D20",111:"T20 19 D16",110:"T20 10 D20",109:"T20 9 D20",108:"T20 16 D16",107:"T19 10 D20",106:"T20 10 D18",105:"T20 13 D16",104:"T18 10 D20",103:"T20 3 D20",102:"T20 10 D16",101:"T17 10 D20",100:"T20 D20",99:"T19 10 D16",98:"T20 D19",97:"T19 D20",96:"T20 D18",95:"T19 D19",94:"T18 D20",93:"T19 D18",92:"T20 D16",91:"T17 D20",90:"T18 D18",89:"T19 D16",88:"T16 D20",87:"T17 D18",86:"T18 D16",85:"T15 D20",84:"T20 D12",83:"T17 D16",82:"T14 D20",81:"T19 D12",80:"T20 D10",79:"T13 D20",78:"T18 D12",77:"T19 D10",76:"T20 D8",75:"T17 D12",74:"T14 D16",73:"T19 D8",72:"T16 D12",71:"T13 D16",70:"T18 D8",69:"T19 D6",68:"T20 D4",67:"T17 D8",66:"T10 D18",65:"T19 D4",64:"T16 D8",63:"T13 D12",62:"T10 D16",61:"T15 D8",60:"20 D20",50:"10 D20",40:"D20",32:"D16",24:"D12",16:"D8",8:"D4",4:"D2",2:"D1"};
+
+        let state = {
+            players: [],
+            currIdx: 0,
+            startIdx: 0,
+            config: {},
+            currentVisit: [],
+            multiplier: 1,
+            historyStack: []
+        };
+        let sounds = { s180: null, win: null, bust: null };
+
+        // --- INIT ---
+        window.onload = () => {
+            initNumpad();
+            loadSavedPlayers();
+            addPlayerInput(); // P1
+            addPlayerInput(); // P2 alapból
+            
+            ['180', 'win', 'bust'].forEach(t => {
+                document.getElementById(`sound-${t}`).addEventListener('change', e => {
+                    let f = e.target.files[0];
+                    if(f) sounds['s'+t] = new Audio(URL.createObjectURL(f));
+                });
+            });
+        };
+
+        function initNumpad() {
+            let np = document.getElementById('numpad');
+            for(let i=1; i<=20; i++){
+                let b = document.createElement('button');
+                b.className = 'num-btn'; b.innerText = i;
+                b.onclick = () => addDart(i);
+                np.appendChild(b);
+            }
+            // Bull spanning 5 cols
+            let bull = document.createElement('button');
+            bull.className = 'num-btn bull-btn'; bull.innerText = 'BULL';
+            bull.onclick = () => addDart(25);
+            np.appendChild(bull);
+
+            // Miss spanning 5 cols
+            let miss = document.createElement('button');
+            miss.className = 'num-btn miss-btn'; miss.innerText = 'MISS (0)';
+            miss.onclick = () => addDart(0);
+            np.appendChild(miss);
+        }
+
+        function loadSavedPlayers() {
+            let saved = JSON.parse(localStorage.getItem('dartsPlayers')) || [];
+            let list = document.getElementById('saved-players');
+            saved.forEach(name => {
+                let opt = document.createElement('option');
+                opt.value = name;
+                list.appendChild(opt);
+            });
+        }
+
+        function addPlayerInput() {
+            let container = document.getElementById('players-container');
+            let idx = container.children.length + 1;
+            let inp = document.createElement('input');
+            inp.type = "text";
+            inp.placeholder = `Játékos ${idx} neve`;
+            inp.className = "player-input";
+            inp.setAttribute('list', 'saved-players');
+            container.appendChild(inp);
+        }
+
+        // --- JÁTÉK INDÍTÁS ---
+        function startGame() {
+            let inputs = document.querySelectorAll('.player-input');
+            let validPlayers = [];
+            inputs.forEach(inp => {
+                if(inp.value.trim()) validPlayers.push(inp.value.trim());
+            });
+            
+            if(validPlayers.length < 1) return alert("Legalább 1 játékos kell!");
+            
+            // Mentés adatbázisba
+            let saved = JSON.parse(localStorage.getItem('dartsPlayers')) || [];
+            validPlayers.forEach(name => {
+                if(!saved.includes(name)) saved.push(name);
+            });
+            localStorage.setItem('dartsPlayers', JSON.stringify(saved));
+
+            state.config = {
+                startScore: parseInt(document.getElementById('start-score').value),
+                doubleOut: document.getElementById('checkout-mode').value === 'double',
+                legsSet: parseInt(document.getElementById('legs-per-set').value),
+                setsWin: parseInt(document.getElementById('sets-to-win').value)
+            };
+
+            state.players = validPlayers.map(name => ({
+                name: name,
+                score: state.config.startScore,
+                legs: 0, sets: 0,
+                totalScore: 0, totalDarts: 0,
+                hits: {} // Statisztikának
+            }));
+
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'flex';
+            document.getElementById('match-config-display').innerText = `${state.config.startScore} ${state.config.doubleOut ? 'DO' : 'SO'}`;
+            
+            renderScoreboard();
+            updateUI();
+        }
+
+        // --- GAMEPLAY ---
+        function toggleMod(m) {
+            state.multiplier = (state.multiplier === m) ? 1 : m;
+            updateUI();
+        }
+
+        function addDart(val) {
+            if(state.currentVisit.length >= 3) return;
+
+            let mod = state.multiplier;
+            let score = val * mod;
+            let text = val;
+            let hitKey = val; // Statisztikai kulcs
+
+            if(val === 0) { score = 0; text = "MISS"; hitKey = "0"; }
+            else if(val === 25) {
+                if(mod === 3) { alert("Nincs T-Bull!"); state.multiplier = 1; updateUI(); return; }
+                if(mod === 2) { score = 50; text = "BULL"; hitKey="DBull"; }
+                else { score = 25; text = "25"; hitKey="SBull"; }
+            } else {
+                if(mod === 2) { text = "D"+val; hitKey="D"+val; }
+                else if(mod === 3) { text = "T"+val; hitKey="T"+val; }
+                else { hitKey="S"+val; }
+            }
+
+            state.currentVisit.push({ score, text, mod, raw: val, key: hitKey });
+            state.multiplier = 1;
+            
+            if(score === 60 || score === 50) playSound("hit");
+            updateUI();
+        }
+
+        function undoDart() {
+            state.currentVisit.pop();
+            updateUI();
+        }
+
+        function undoRound() {
+            if(state.historyStack.length > 0) {
+                let prev = state.historyStack.pop();
+                let savedStack = state.historyStack;
+                state = prev;
+                state.historyStack = savedStack;
+                renderScoreboard();
+                updateUI();
+            }
+        }
+
+        function commitTurn() {
+            // MENTÉS
+            let snap = JSON.parse(JSON.stringify(state));
+            delete snap.historyStack;
+            state.historyStack.push(snap);
+            if(state.historyStack.length > 10) state.historyStack.shift();
+
+            let p = state.players[state.currIdx];
+            let total = state.currentVisit.reduce((a,b)=>a+b.score, 0);
+            let rem = p.score - total;
+            
+            let bust = false;
+            let win = false;
+
+            if(rem < 0) bust = true;
+            else if(rem === 1 && state.config.doubleOut) bust = true;
+            else if(rem === 0) {
+                if(state.config.doubleOut) {
+                    let last = state.currentVisit[state.currentVisit.length-1];
+                    if(last.mod === 2 || last.score === 50) win = true;
+                    else bust = true;
+                } else {
+                    win = true;
+                }
+            }
+
+            // Statisztika mentése (Bust esetén is!)
+            state.currentVisit.forEach(d => {
+                p.totalDarts++;
+                if(!bust) p.totalScore += d.score; // Bust esetén a pontátlag romlik (0 pont, 3 nyíl)
+                if(!p.hits[d.key]) p.hits[d.key] = 0;
+                p.hits[d.key]++;
+            });
+
+            if(bust) {
+                playSound("bust", "Bust!");
+            } else {
+                p.score = rem;
+                if(total === 180) playSound("s180", "ONE HUNDRED AND EIGHTY");
+                else playSound(total);
+            }
+
+            state.currentVisit = [];
+            
+            if(win) {
+                handleLegWin(p);
+            } else {
+                state.currIdx = (state.currIdx + 1) % state.players.length;
+            }
+            updateUI();
+        }
+
+        function handleLegWin(p) {
+            playSound("win", "Game Shot!");
+            p.legs++;
+            
+            if(p.legs >= state.config.legsSet) {
+                p.sets++;
+                state.players.forEach(pl => pl.legs = 0);
+                if(p.sets >= state.config.setsWin) {
+                    setTimeout(()=>alert(`🏆 ${p.name} NYERT! 🏆`), 500);
+                    return;
+                }
+            }
+
+            setTimeout(() => {
+                alert(`Leg: ${p.name}`);
+                state.players.forEach(pl => pl.score = state.config.startScore);
+                state.startIdx = (state.startIdx + 1) % state.players.length;
+                state.currIdx = state.startIdx;
+                state.historyStack = [];
+                updateUI();
+            }, 500);
+        }
+
+        // --- UI RENDER ---
+        function renderScoreboard() {
+            let container = document.getElementById('scoreboard-container');
+            container.innerHTML = "";
+            state.players.forEach((p, idx) => {
+                let div = document.createElement('div');
+                div.className = `player-card ${idx === state.currIdx ? 'active' : ''}`;
+                div.id = `card-p${idx}`;
+                
+                // Kiszálló számolás
+                let coHtml = "";
+                if(idx === state.currIdx && checkouts[p.score] && state.config.doubleOut) {
+                     coHtml = `<div class="checkout-box" style="display:block">${checkouts[p.score]}</div>`;
+                }
+
+                div.innerHTML = `
+                    <div class="p-name">${p.name}</div>
+                    <div class="p-score">${p.score}</div>
+                    <div class="sets-legs">S:${p.sets} | L:${p.legs}</div>
+                    ${coHtml}
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function updateUI() {
+            renderScoreboard();
+            
+            // Nyilak
+            for(let i=0; i<3; i++){
+                let slot = document.getElementById(`d${i+1}`);
+                if(state.currentVisit[i]) {
+                    slot.innerText = state.currentVisit[i].text;
+                    slot.classList.add('filled');
+                } else {
+                    slot.innerText = "";
+                    slot.classList.remove('filled');
+                }
+            }
+
+            let vTot = state.currentVisit.reduce((a,b)=>a+b.score, 0);
+            document.getElementById('visit-score').innerText = vTot;
+
+            // Gomb státuszok
+            let isFull = state.currentVisit.length === 3;
+            document.getElementById('numpad').style.pointerEvents = isFull ? 'none' : 'auto';
+            document.getElementById('numpad').style.opacity = isFull ? 0.5 : 1;
+            document.getElementById('btn-next').style.display = isFull ? 'block' : 'none';
+            document.getElementById('btn-undo-round').style.display = (state.historyStack.length>0 && !isFull && state.currentVisit.length===0) ? 'block' : 'none';
+            
+            document.getElementById('btn-double').classList.toggle('active', state.multiplier===2);
+            document.getElementById('btn-triple').classList.toggle('active', state.multiplier===3);
+        }
+
+        // --- STATS ---
+        function showStats() {
+            let content = document.getElementById('stats-content');
+            let html = "";
+            
+            state.players.forEach(p => {
+                let avg = p.totalDarts > 0 ? (p.totalScore / p.totalDarts * 3).toFixed(2) : "0.00";
+                html += `<div style="margin-bottom:20px; border:1px solid #444; padding:10px; border-radius:5px;">
+                    <h3 style="color:#f39c12; margin:0;">${p.name}</h3>
+                    <p>3-nyilas átlag: <strong>${avg}</strong></p>
+                    <table class="stats-table">
+                        <tr><th>Dobás</th><th>Darab</th></tr>`;
+                
+                // Rendezés darabszám szerint
+                let sorted = Object.entries(p.hits).sort((a,b) => b[1] - a[1]);
+                sorted.forEach(([k, v]) => {
+                    html += `<tr><td>${k}</td><td>${v}</td></tr>`;
+                });
+                if(sorted.length===0) html += "<tr><td colspan='2'>-</td></tr>";
+                
+                html += `</table></div>`;
+            });
+
+            content.innerHTML = html;
+            document.getElementById('stats-modal').style.display = "block";
+        }
+        function closeStats() { document.getElementById('stats-modal').style.display = "none"; }
+
+        // --- AUDIO ---
+        function playSound(key, fallback) {
+            if(key === "s180" && sounds.s180) { sounds.s180.play(); return; }
+            if(key === "win" && sounds.win) { sounds.win.play(); return; }
+            if(key === "bust" && sounds.bust) { sounds.bust.play(); return; }
+            
+            // TTS
+            if(fallback || typeof key === 'number') {
+                let txt = fallback || key.toString();
+                let u = new SpeechSynthesisUtterance(txt);
+                u.lang = 'en-US'; 
+                window.speechSynthesis.speak(u);
+            }
+        }
+
+    </script>
+</body>
+</html>
