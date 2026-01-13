@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Magyar Darts Pro - Javított</title>
+    <title>DáCi Darts Club Darts League</title>
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --accent: #f39c12; --green: #27ae60; --red: #c0392b; --text: #e0e0e0; --blue: #2980b9; --neon: #39ff14; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
@@ -18,160 +18,127 @@
         .btn-add { background: transparent; border: 1px dashed #555; color: #888; padding: 8px; width: 100%; cursor: pointer; margin-top: 5px; }
         .btn-start { background: var(--accent); color: #000; font-weight: bold; padding: 15px 40px; border: none; border-radius: 30px; font-size: 1.5rem; margin-top: 20px; cursor: pointer; box-shadow: 0 0 20px rgba(243, 156, 18, 0.4); width: 100%; max-width: 400px; }
 
-        /* --- GAME SCREEN (Layout módosítva) --- */
+        /* --- GAME SCREEN --- */
         #game-screen { 
-            display: none; 
-            width: 100%; 
-            max-width: 600px; 
-            flex-direction: column; 
-            height: 100dvh; /* Dinamikus viewport height mobilra */
-            overflow: hidden; /* Fontos: megakadályozza a teljes oldal görgetését */
+            display: none; width: 100%; max-width: 600px; flex-direction: column; 
+            height: 100vh; height: 100dvh; overflow: hidden; 
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
         }
         
-        /* Top Info */
-        .match-info { display: flex; justify-content: space-between; padding: 8px 15px; background: #000; font-size: 0.85rem; color: #888; border-bottom: 1px solid #333; flex-shrink: 0; }
+        .match-info { display: flex; justify-content: space-between; padding: 2px 10px; background: #000; font-size: 0.7rem; color: #888; border-bottom: 1px solid #333; flex-shrink: 0; }
         
-        /* Scoreboard - Tetején, fix magasság helyett tartalomhoz igazodik */
         .scoreboard { 
-            display: flex; 
-            flex-wrap: wrap; 
-            gap: 10px; 
-            padding: 10px; 
-            justify-content: center; 
-            align-items: flex-start;
-            flex-shrink: 0; /* Nem nyomódik össze */
-            background: #1a1a1a;
-            border-bottom: 1px solid #333;
-            max-height: 35vh; /* Ha túl sok a játékos, a scoreboard görgessen, ne nyomja el a pályát */
-            overflow-y: auto;
+            display: flex; flex-wrap: wrap; gap: 5px; padding: 5px; justify-content: center; align-items: flex-start;
+            flex: 0 0 auto; background: #1a1a1a; border-bottom: 1px solid #333; max-height: 20vh; overflow-y: auto;
         }
         .player-card { 
-            flex: 1 1 40%; 
-            min-width: 140px; 
-            background: var(--card); 
-            border-radius: 8px; 
-            padding: 10px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            position: relative; 
-            border: 2px solid transparent; 
-            transition: 0.3s; 
+            flex: 1 1 45%; min-width: 100px; background: var(--card); border-radius: 6px; padding: 5px; 
+            display: flex; flex-direction: column; align-items: center; position: relative; border: 2px solid transparent; transition: 0.3s; 
         }
-        .player-card.active { border-color: var(--accent); background: #252525; box-shadow: inset 0 0 15px rgba(0,0,0,0.5); transform: scale(1.02); z-index: 10; }
-        .p-name { font-size: 1rem; color: #bbb; text-transform: uppercase; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-        .p-score { font-size: 3rem; font-weight: bold; line-height: 1; margin: 5px 0; color: #fff; }
+        .player-card.active { border-color: var(--accent); background: #252525; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        .p-name { font-size: 0.8rem; color: #bbb; text-transform: uppercase; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        .p-score { font-size: 1.8rem; font-weight: bold; line-height: 1; margin: 2px 0; color: #fff; }
         .active .p-score { color: var(--accent); }
-        .sets-legs { background: #333; padding: 2px 6px; border-radius: 4px; color: #fff; font-size: 0.75rem; margin-top: 5px; }
+        .sets-legs { background: #333; padding: 1px 5px; border-radius: 3px; color: #fff; font-size: 0.65rem; margin-top: 2px; }
+        .p-avg { font-size: 0.7rem; color: var(--blue); margin-top: 2px; font-weight: bold; }
         
-        /* Kiszálló doboz */
-        .checkout-box { background: var(--green); color: white; padding: 5px; border-radius: 4px; font-weight: bold; font-size: 0.9rem; margin-top: 5px; display: none; width: 100%; text-align: center; border: 1px solid #1e8449; }
+        .checkout-box { background: var(--green); color: white; padding: 2px; border-radius: 3px; font-weight: bold; font-size: 0.75rem; margin-top: 2px; display: none; width: 100%; text-align: center; }
 
-        /* Middle Section - Kitölti a teret és középre igazít */
         .mid-section { 
-            flex: 1 1 auto; /* Növekszik, hogy kitöltse a helyet */
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; /* Vertikális középre igazítás */
-            padding: 10px; 
-            background: #181818; 
-            overflow-y: auto;
-            min-height: 0; /* KRITIKUS JAVÍTÁS: Engedi a flex elemet összenyomódni, ha kevés a hely */
+            flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            padding: 5px; background: #181818; overflow-y: auto; min-height: 0; 
         }
-        .darts-display { display: flex; gap: 15px; margin-bottom: 5px; }
-        .dart-slot { width: 50px; height: 50px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; border: 2px solid #444; color: #aaa; }
+        .darts-display { display: flex; gap: 10px; margin-bottom: 5px; }
+        .dart-slot { width: 40px; height: 40px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: bold; border: 2px solid #444; color: #aaa; }
         .dart-slot.filled { border-color: var(--accent); color: white; background: #444; }
-        .visit-score { color: var(--accent); font-size: 1.2rem; font-weight: bold; }
-        
-        /* FŐ KISZÁLLÓ */
-        #mid-checkout-display { 
-            color: var(--neon); 
-            font-size: 1.4rem; 
-            font-weight: bold; 
-            margin-top: 5px; 
-            text-shadow: 0 0 5px rgba(57, 255, 20, 0.5); 
-            display: none; 
-        }
+        .visit-score { color: var(--accent); font-size: 1.1rem; font-weight: bold; }
+        #mid-checkout-display { color: var(--neon); font-size: 1.2rem; font-weight: bold; margin-top: 5px; text-shadow: 0 0 5px rgba(57, 255, 20, 0.5); display: none; }
 
-        /* Controls - Alján rögzítve, egységes gombméretek */
         .controls-area { 
-            background: #1e1e1e; 
-            padding: 8px; 
-            border-top: 1px solid #333; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 6px; 
-            flex-shrink: 0; 
-            padding-bottom: max(8px, env(safe-area-inset-bottom)); /* iPhone safe area */
+            background: #1e1e1e; padding: 5px; border-top: 1px solid #333; display: flex; flex-direction: column; gap: 4px; 
+            flex: 0 0 auto; padding-bottom: max(5px, env(safe-area-inset-bottom));
         }
         
-        /* Minden gombra vonatkozó alap beállítás az egységes magassághoz */
-        .mod-btn, .num-btn, .act-btn, .miss-btn {
-            height: 55px; /* Egységes magasság */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0; /* Padding reset */
-            cursor: pointer;
-            font-weight: bold;
-            border-radius: 6px;
-            border: none;
-            color: white;
-            transition: 0.2s;
+        .mod-btn, .num-btn, .act-btn, .miss-btn, .stat-btn-small {
+            height: 48px; display: flex; align-items: center; justify-content: center;
+            padding: 0; cursor: pointer; font-weight: bold; border-radius: 5px; border: none; color: white; transition: 0.1s;
         }
 
-        .mod-row { display: flex; gap: 6px; }
-        .mod-btn { flex: 1; font-size: 1.1rem; opacity: 0.3; background: #555; }
+        .mod-row { display: flex; gap: 4px; }
+        .mod-btn { flex: 1; font-size: 1rem; opacity: 0.3; background: #555; }
         .mod-btn.active { opacity: 1; }
         #btn-double { background: var(--red); }
         #btn-triple { background: var(--green); }
-        #btn-camera { background: #555; opacity: 1; }
-        #btn-camera.active { background: #e74c3c; }
+        
+        .numpad { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; }
+        .num-btn { grid-column: span 2; background: #3a3a3a; font-size: 1.2rem; }
+        .num-btn:active { background: #555; transform: scale(0.95); }
+        .bull-single { grid-column: span 5; background: #27ae60; font-size: 1.1rem; }
+        .bull-double { grid-column: span 5; background: #c0392b; font-size: 1.1rem; }
+        .miss-btn { grid-column: span 10; background: #333; font-size: 1rem; border: 1px solid #444; color: #888; padding: 10px 0; height: 40px; }
 
-        .numpad { display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; }
-        
-        .num-btn { grid-column: span 2; background: #3a3a3a; font-size: 1.3rem; }
-        .num-btn:active { background: #555; }
-        
-        .bull-single { grid-column: span 5; background: #27ae60; font-size: 1.3rem; }
-        .bull-double { grid-column: span 5; background: #c0392b; font-size: 1.3rem; }
-        
-        .miss-btn { grid-column: span 10; background: #333; font-size: 1.1rem; border: 1px solid #444; color: #888; }
-
-        .action-row { display: flex; gap: 6px; margin-top: 5px; }
-        .act-btn { flex: 1; font-size: 1rem; }
+        .action-row { display: flex; gap: 4px; margin-top: 0; }
+        .act-btn { flex: 1; font-size: 0.9rem; }
         .btn-undo-dart { background: #7f8c8d; }
-        .btn-undo-round { background: #c0392b; font-size: 0.9rem; }
-        .btn-next { background: var(--accent); color: black; display: none; font-size: 1.2rem; animation: pulse 1.5s infinite; }
-        
-        .btn-stats-toggle { background: var(--blue); width: 100%; padding: 10px; margin-top: 5px; border: none; border-radius: 5px; color: white; font-weight: bold; cursor: pointer; }
+        .btn-undo-round { background: #c0392b; font-size: 0.8rem; }
+        .btn-next { background: var(--accent); color: black; display: none; font-size: 1rem; animation: pulse 1.5s infinite; }
+        .stat-btn-small { background: var(--blue); width: 45px; font-size: 1.2rem; }
 
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
 
-        /* Camera Box */
-        #camera-container { width: 100%; height: 0; overflow: hidden; transition: height 0.3s ease; background: #000; display: flex; justify-content: center; align-items: center; }
-        #camera-container.open { height: 200px; margin-bottom: 10px; border-bottom: 2px solid var(--accent); }
+        #camera-container { width: 100%; display: none; background: #000; justify-content: center; align-items: center; margin-bottom: 5px; border-bottom: 2px solid var(--accent); }
+        #camera-container.open { display: flex; height: 160px; flex-shrink: 0; }
         video { width: 100%; height: 100%; object-fit: cover; }
 
         /* Modal */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; overflow-y: auto; }
-        .modal-content { padding: 20px; max-width: 600px; margin: 0 auto; text-align: center; }
-        .close-modal { position: fixed; top: 20px; right: 20px; font-size: 2rem; color: var(--red); cursor: pointer; z-index: 101; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; overflow-y: auto; }
+        .modal-content { padding: 10px; max-width: 800px; margin: 0 auto; text-align: center; }
+        .close-modal { position: fixed; top: 20px; right: 20px; font-size: 2rem; color: var(--red); cursor: pointer; z-index: 201; }
         #win-confirm-modal { align-items: center; justify-content: center; display: none; }
         .win-btn-row { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
-        .btn-confirm-win { background: var(--green); padding: 20px; font-size: 1.2rem; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
-        .btn-cancel-win { background: var(--red); padding: 20px; font-size: 1.2rem; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
+        .btn-confirm-win { background: var(--green); padding: 15px; font-size: 1.1rem; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
+        .btn-cancel-win { background: var(--red); padding: 15px; font-size: 1.1rem; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
 
+        /* STATS STYLING */
+        .stats-container { display: flex; flex-direction: column; gap: 20px; color: white; text-align: left; padding-top: 40px; }
+        .stats-tabs { display: flex; gap: 10px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 5px; }
+        .stat-tab { background: #333; border: 1px solid #555; color: #aaa; padding: 8px 15px; border-radius: 20px; cursor: pointer; white-space: nowrap; transition: 0.2s; }
+        .stat-tab.active { background: var(--accent); color: black; font-weight: bold; border-color: var(--accent); }
+        
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .stat-box { background: #222; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #333; }
+        .stat-val { font-size: 1.5rem; font-weight: bold; color: var(--accent); }
+        .stat-lbl { font-size: 0.8rem; color: #888; }
+
+        .history-list { display: flex; flex-direction: column; gap: 10px; }
+        .history-item { background: #222; padding: 10px; border-radius: 5px; border-left: 4px solid var(--accent); }
+        .h-date { font-size: 0.75rem; color: #888; }
+        .h-match { font-size: 1rem; font-weight: bold; color: white; }
+        .h-score { color: var(--green); float: right; font-weight: bold; }
+
+        /* Heatmap */
+        #heatmap-container { width: 100%; max-width: 400px; margin: 0 auto; position: relative; display: block; background: #222; border-radius: 50%; overflow: hidden;}
+        svg { width: 100%; height: auto; display: block; }
+        .sector-path { stroke: #333; stroke-width: 1px; transition: fill 0.2s; }
+        .sector-text { font-size: 12px; fill: #fff; text-anchor: middle; dominant-baseline: middle; pointer-events: none; font-weight: bold; }
+
+        /* Sortable Table */
+        .sortable-th { cursor: pointer; user-select: none; position: relative; padding-right: 15px; }
+        .sortable-th:hover { color: var(--accent); }
+        .sortable-th::after { content: '↕'; position: absolute; right: 2px; opacity: 0.3; font-size: 0.8rem; }
+        .sortable-th.asc::after { content: '↑'; opacity: 1; }
+        .sortable-th.desc::after { content: '↓'; opacity: 1; }
+        
         table.stats-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
         .stats-table th, .stats-table td { border: 1px solid #444; padding: 8px; text-align: center; color: #ddd; }
         .stats-table th { background: #333; color: var(--accent); }
+        .stats-table tr:nth-child(even) { background: #2a2a2a; }
     </style>
 </head>
 <body>
 
     <div id="setup-screen">
-        <h1>🎯 Magyar Darts Pro</h1>
+        <h1>જ⁀➴ 🎯 DáCi Darts Club Darts League ⁀➴🎯</h1>
         <div class="setup-group">
             <h2>Játékosok</h2>
             <div id="players-container"></div>
@@ -206,9 +173,6 @@
         <div class="scoreboard" id="scoreboard-container"></div>
         
         <div class="mid-section">
-            <div id="camera-container">
-                <video id="camera-feed" autoplay playsinline></video>
-            </div>
             <div class="darts-display">
                 <div class="dart-slot" id="d1"></div>
                 <div class="dart-slot" id="d2"></div>
@@ -221,7 +185,6 @@
         <div class="controls-area">
             <div class="mod-row">
                 <button id="btn-double" class="mod-btn" onclick="toggleMod(2)">DUPLA</button>
-                <button id="btn-camera" class="mod-btn" onclick="toggleCamera()">📷</button>
                 <button id="btn-triple" class="mod-btn" onclick="toggleMod(3)">TRIPLA</button>
             </div>
             <div class="numpad" id="numpad"></div>
@@ -229,8 +192,8 @@
                 <button class="act-btn btn-undo-dart" onclick="undoDart()">JAVÍT</button>
                 <button class="act-btn btn-undo-round" id="btn-undo-round" onclick="undoRound()" style="display:none;">KÖR VISSZA</button>
                 <button class="act-btn btn-next" id="btn-next" onclick="commitTurn()">KÖVETKEZŐ</button>
+                <button class="stat-btn-small" onclick="showStats()">📊</button>
             </div>
-            <button class="btn-stats-toggle" onclick="showStats()">📊 Részletes Statisztika</button>
         </div>
     </div>
 
@@ -249,8 +212,9 @@
     <div id="stats-modal" class="modal">
         <span class="close-modal" onclick="closeStats()">&times;</span>
         <div class="modal-content">
-            <h2 style="color:var(--accent)">Statisztikák</h2>
-            <div id="stats-content"></div>
+            <h2 style="color:var(--accent); margin-bottom:5px;">Statisztikák</h2>
+            <div id="stats-nav" class="stats-tabs"></div>
+            <div id="stats-body" class="stats-container"></div>
         </div>
     </div>
 
@@ -261,9 +225,11 @@
             players: [], currIdx: 0, startIdx: 0,
             config: {}, currentVisit: [], multiplier: 1,
             historyStack: [], isProcessing: false,
-            cameraActive: false, stream: null
+            stream: null
         };
         let sounds = { s180: null, win: null, bust: null };
+        const sectorOrder = [20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5];
+        let throwSort = { col: 'count', asc: false };
 
         window.onload = () => {
             initNumpad();
@@ -276,45 +242,22 @@
             });
         };
 
-        function toggleCamera() {
-            let container = document.getElementById('camera-container');
-            let btn = document.getElementById('btn-camera');
-            let video = document.getElementById('camera-feed');
-
-            if (!state.cameraActive) {
-                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-                .then(stream => {
-                    state.stream = stream; video.srcObject = stream;
-                    state.cameraActive = true; container.classList.add('open'); btn.classList.add('active');
-                })
-                .catch(err => { alert("Kamera hiba: " + err); });
-            } else {
-                if (state.stream) { state.stream.getTracks().forEach(track => track.stop()); }
-                video.srcObject = null; state.cameraActive = false;
-                container.classList.remove('open'); btn.classList.remove('active');
-            }
-        }
-
         function initNumpad() {
             let np = document.getElementById('numpad');
-            // 1-20 gombok
             for(let i=1; i<=20; i++){
                 let b = document.createElement('button');
                 b.className = 'num-btn'; b.innerText = i;
                 b.onclick = () => addDart(i);
                 np.appendChild(b);
             }
-            // 25 (Sima Bull)
             let b25 = document.createElement('button');
             b25.className = 'num-btn bull-single'; b25.innerText = '25';
             b25.onclick = () => addDart(25);
             np.appendChild(b25);
-            // 50 (Bullseye)
             let b50 = document.createElement('button');
             b50.className = 'num-btn bull-double'; b50.innerText = '50';
             b50.onclick = () => addDart(50);
             np.appendChild(b50);
-            // MISS
             let miss = document.createElement('button');
             miss.className = 'num-btn miss-btn'; miss.innerText = 'MISS (0)';
             miss.onclick = () => addDart(0);
@@ -336,13 +279,75 @@
             container.appendChild(inp);
         }
 
+        // --- STATS LOGIC ---
+        function getPersistentStats() { return JSON.parse(localStorage.getItem('dartsGlobalStats')) || {}; }
+        function savePersistentStats(stats) { localStorage.setItem('dartsGlobalStats', JSON.stringify(stats)); }
+        function getMatchHistory() { return JSON.parse(localStorage.getItem('dartsMatchHistory')) || []; }
+        function saveMatchHistory(history) { localStorage.setItem('dartsMatchHistory', JSON.stringify(history)); }
+
+        // Mentsük az egyes dobást az összesítettbe
+        function recordDartStat(playerName, dart) {
+            let allStats = getPersistentStats();
+            let p = allStats[playerName] || { 
+                totalScore: 0, totalDarts: 0, wins: 0, matches: 0,
+                bestLeg: 999, highestCheckout: 0, hits: {},
+                c100: 0, c140: 0, c180: 0
+            };
+            p.totalDarts++; p.totalScore += dart.score;
+            let key = dart.key;
+            if(!p.hits[key]) p.hits[key] = 0; p.hits[key]++;
+            
+            // Mentés vissza a localStorage-ba
+            allStats[playerName] = p; // Fontos: frissítsük a játékos objektumot
+            savePersistentStats(allStats);
+        }
+        
+        function recordVisitStat(playerName, visitTotal) {
+            let allStats = getPersistentStats();
+            let p = allStats[playerName]; if(!p) return;
+            if(visitTotal === 180) p.c180++;
+            else if(visitTotal >= 140) p.c140++;
+            else if(visitTotal >= 100) p.c100++;
+            
+            allStats[playerName] = p;
+            savePersistentStats(allStats);
+        }
+        
+        function recordLegWin(playerName, dartCount, checkoutScore) {
+            let allStats = getPersistentStats();
+            let p = allStats[playerName]; if(!p) return;
+            p.wins++;
+            if(dartCount < p.bestLeg) p.bestLeg = dartCount;
+            if(checkoutScore > p.highestCheckout) p.highestCheckout = checkoutScore;
+            
+            allStats[playerName] = p;
+            savePersistentStats(allStats);
+        }
+
+        // Meccs végén mentés a naplóba
+        function saveMatchEnd(winnerName) {
+            let history = getMatchHistory();
+            let matchData = {
+                date: new Date().toLocaleString('hu-HU'),
+                winner: winnerName,
+                players: state.players.map(p => ({
+                    name: p.name,
+                    avg: p.totalDarts > 0 ? (p.totalScore / p.totalDarts * 3).toFixed(2) : "0.00",
+                    score: p.sets + " (" + p.legs + ")", // Set és leg végeredmény
+                    hits: p.hits // Az adott meccs dobás statisztikája!
+                }))
+            };
+            history.unshift(matchData); // Elejére szúrjuk be
+            if(history.length > 50) history.pop(); // Max 50 meccs
+            saveMatchHistory(history);
+        }
+
         function startGame() {
             let inputs = document.querySelectorAll('.player-input');
             let validPlayers = [];
             inputs.forEach(inp => { if(inp.value.trim()) validPlayers.push(inp.value.trim()); });
             if(validPlayers.length < 1) return alert("Legalább 1 játékos kell!");
             
-            // Mentés
             let saved = JSON.parse(localStorage.getItem('dartsPlayers')) || [];
             validPlayers.forEach(name => { if(!saved.includes(name)) saved.push(name); });
             localStorage.setItem('dartsPlayers', JSON.stringify(saved));
@@ -354,7 +359,8 @@
                 setsWin: parseInt(document.getElementById('sets-to-win').value)
             };
             state.players = validPlayers.map(name => ({
-                name: name, score: state.config.startScore, legs: 0, sets: 0, totalScore: 0, totalDarts: 0, hits: {}
+                name: name, score: state.config.startScore, legs: 0, sets: 0, totalScore: 0, totalDarts: 0, hits: {},
+                currentLegDarts: 0
             }));
             document.getElementById('setup-screen').style.display = 'none';
             document.getElementById('game-screen').style.display = 'flex';
@@ -362,33 +368,19 @@
             renderScoreboard(); updateUI();
         }
 
-        function toggleMod(m) {
-            state.multiplier = (state.multiplier === m) ? 1 : m;
-            updateUI();
-        }
+        function toggleMod(m) { state.multiplier = (state.multiplier === m) ? 1 : m; updateUI(); }
 
         function addDart(val) {
             if(state.currentVisit.length >= 3 || state.isProcessing) return;
 
             let mod = state.multiplier;
             let score = val * mod;
-            let text = val; 
-            let hitKey = val;
+            let text = val; let hitKey = val;
 
             if(val === 0) { score = 0; text = "MISS"; hitKey = "0"; }
-            else if(val === 25) {
-                // Sima Bull (25)
-                score = 25; text = "25"; hitKey="SBull";
-                // Ha véletlenül duplát/triplát nyomott előtte, ignoráljuk, vagy vegyük úgy, hogy a felhasználó döntött a gombbal
-                state.multiplier = 1; 
-            }
-            else if(val === 50) {
-                // Bullseye (50)
-                score = 50; text = "BULL"; hitKey="DBull";
-                state.multiplier = 1;
-            }
+            else if(val === 25) { score = 25; text = "25"; hitKey="SBull"; state.multiplier = 1; }
+            else if(val === 50) { score = 50; text = "BULL"; hitKey="DBull"; state.multiplier = 1; }
             else {
-                // 1-20
                 if(mod === 2) { text = "D"+val; hitKey="D"+val; }
                 else if(mod === 3) { text = "T"+val; hitKey="T"+val; }
                 else { hitKey="S"+val; }
@@ -396,31 +388,31 @@
 
             let dart = { score, text, mod, raw: val, key: hitKey };
             state.currentVisit.push(dart);
-            state.multiplier = 1; // Reset modifier
+            state.multiplier = 1;
 
-            // Ellenőrzés
             let p = state.players[state.currIdx];
             let visitSum = state.currentVisit.reduce((a,b)=>a+b.score, 0);
             let remainder = p.score - visitSum;
 
-            // BUST
             let isBust = false;
             if (remainder < 0) isBust = true;
             else if (state.config.doubleOut) {
                 if (remainder === 1) isBust = true;
-                // Ha 0, de nem duplával
                 if (remainder === 0) {
-                    // Utolsó dobás vizsgálata. 
-                    // Ha a gomb 50 volt (val===50) vagy a mod volt 2
                     let last = state.currentVisit[state.currentVisit.length-1];
-                    let isDouble = (last.mod === 2 && last.raw <= 20) || (last.raw === 50); // 50 is double bull
+                    let isDouble = (last.mod === 2 && last.raw <= 20) || (last.raw === 50);
                     if (!isDouble) isBust = true;
                 }
             }
 
             if(isBust) { updateUI(); handleBust(); return; }
 
-            // WIN
+            // Frissítsd azonnal a statisztikát a háttérben
+            recordDartStat(p.name, dart);
+            // Frissítsd a helyi statisztikát is a meccsen belül
+            p.totalDarts++; p.totalScore+=dart.score; p.currentLegDarts++;
+            if(!p.hits[dart.key]) p.hits[dart.key]=0; p.hits[dart.key]++;
+
             if(remainder === 0) {
                 updateUI(); playSound("win", "Kiszálló megvan!");
                 document.getElementById('win-confirm-name').innerText = p.name;
@@ -429,7 +421,9 @@
             }
 
             if(score === 60 || score === 50) playSound("hit");
-            updateUI();
+            
+            // Frissítsd azonnal a statisztikát és a kijelzőt
+            updateUI(); 
         }
 
         function confirmWin() { document.getElementById('win-confirm-modal').style.display = 'none'; commitTurn(true); }
@@ -440,7 +434,9 @@
             setTimeout(() => {
                 let p = state.players[state.currIdx];
                 state.currentVisit.forEach(d => {
-                    p.totalDarts++; if(!p.hits[d.key]) p.hits[d.key]=0; p.hits[d.key]++;
+                    p.totalDarts++; p.currentLegDarts++;
+                    if(!p.hits[d.key]) p.hits[d.key]=0; p.hits[d.key]++;
+                    recordDartStat(p.name, d);
                 });
                 state.currentVisit = [];
                 state.currIdx = (state.currIdx + 1) % state.players.length;
@@ -448,7 +444,18 @@
             }, 1500);
         }
 
-        function undoDart() { if(state.currentVisit.length>0 && !state.isProcessing) { state.currentVisit.pop(); updateUI(); } }
+        function undoDart() { 
+            if(state.currentVisit.length>0 && !state.isProcessing) { 
+                let dart = state.currentVisit.pop(); 
+                
+                let p = state.players[state.currIdx];
+                p.totalDarts--; p.totalScore-=dart.score; p.currentLegDarts--;
+                if(p.hits[dart.key]) p.hits[dart.key]--;
+                
+                updateUI(); 
+            } 
+        }
+        
         function undoRound() {
             if(state.historyStack.length>0 && !state.isProcessing) {
                 let prev = state.historyStack.pop();
@@ -465,33 +472,34 @@
 
             let p = state.players[state.currIdx];
             let total = state.currentVisit.reduce((a,b)=>a+b.score, 0);
-            state.currentVisit.forEach(d => {
-                p.totalDarts++; p.totalScore+=d.score;
-                if(!p.hits[d.key]) p.hits[d.key]=0; p.hits[d.key]++;
-            });
+            
+            // A statisztikát már frissítettük dobásonként az addDart-ban!
+            // Csak a 100/140/180-at kell itt menteni.
+            recordVisitStat(p.name, total);
+
             p.score -= total;
 
-            if(forceWin || p.score===0) {
-                handleLegWin(p);
-            } else {
+            if(forceWin || p.score===0) { handleLegWin(p, total); } 
+            else {
                 if(total===180) playSound("s180", "Száznyolcvan!"); else playSound(total);
-                state.currentVisit=[];
-                state.currIdx = (state.currIdx+1) % state.players.length;
-                updateUI();
+                state.currentVisit=[]; state.currIdx = (state.currIdx+1) % state.players.length; updateUI();
             }
         }
 
-        function handleLegWin(p) {
-            p.legs++; state.currentVisit=[];
+        function handleLegWin(p, lastVisitScore) {
+            recordLegWin(p.name, p.currentLegDarts, lastVisitScore);
+            p.legs++; p.currentLegDarts = 0; state.currentVisit=[];
+            
             if(p.legs >= state.config.legsSet) {
                 p.sets++; state.players.forEach(pl=>pl.legs=0);
                 if(p.sets >= state.config.setsWin) {
+                    saveMatchEnd(p.name); // MECCS VÉGE MENTÉS
                     setTimeout(()=>alert(`🏆 ${p.name} NYERT! 🏆`), 500); return;
                 }
             }
             setTimeout(() => {
                 alert(`Leg: ${p.name}`);
-                state.players.forEach(pl=>pl.score = state.config.startScore);
+                state.players.forEach(pl => { pl.score = state.config.startScore; pl.currentLegDarts = 0; });
                 state.startIdx = (state.startIdx+1) % state.players.length;
                 state.currIdx = state.startIdx;
                 state.historyStack=[]; updateUI();
@@ -501,33 +509,38 @@
         function renderScoreboard() {
             let container = document.getElementById('scoreboard-container'); container.innerHTML = "";
             let midCheckout = document.getElementById('mid-checkout-display'); 
-            midCheckout.innerText = "";
-            midCheckout.style.display = "none";
+            midCheckout.innerText = ""; midCheckout.style.display = "none";
 
             state.players.forEach((p, idx) => {
                 let div = document.createElement('div');
                 div.className = `player-card ${idx === state.currIdx ? 'active' : ''}`;
-                
-                // DINAMIKUS PONT KIJELZÉS (Már levonva az aktuális dobást)
                 let displayScore = p.score;
                 if(idx === state.currIdx) {
                     let visitSum = state.currentVisit.reduce((a,b)=>a+b.score, 0);
                     displayScore -= visitSum;
                 }
-
-                // KISZÁLLÓ BÁRKINEK
                 let coHtml = "";
                 if(state.config.doubleOut && displayScore <= 170 && checkouts[displayScore]) {
                     coHtml = `<div class="checkout-box" style="display:block">${checkouts[displayScore]}</div>`;
                     if(idx === state.currIdx) {
-                        midCheckout.innerText = "KISZÁLLÓ: " + checkouts[displayScore];
-                        midCheckout.style.display = "block";
+                        midCheckout.innerText = checkouts[displayScore]; midCheckout.style.display = "block";
                     }
                 }
+                
+                let tempTotalScore = p.totalScore;
+                let tempTotalDarts = p.totalDarts;
+                if (idx === state.currIdx) {
+                     let visitSum = state.currentVisit.reduce((a,b)=>a+b.score, 0);
+                     tempTotalScore += visitSum;
+                     tempTotalDarts += state.currentVisit.length;
+                }
+                
+                let avg = tempTotalDarts > 0 ? (tempTotalScore / tempTotalDarts * 3).toFixed(1) : "0.0";
 
                 div.innerHTML = `
                     <div class="p-name">${p.name}</div>
                     <div class="p-score">${displayScore}</div>
+                    <div class="p-avg">Avg: ${avg}</div>
                     <div class="sets-legs">S:${p.sets} | L:${p.legs}</div>
                     ${coHtml}
                 `;
@@ -550,23 +563,234 @@
             document.getElementById('numpad').style.opacity = (isFull||state.isProcessing)?0.5:1;
             document.getElementById('btn-next').style.display = isFull?'block':'none';
             document.getElementById('btn-undo-round').style.display = (state.historyStack.length>0 && !isFull && state.currentVisit.length===0)?'block':'none';
-            
             document.getElementById('btn-double').classList.toggle('active', state.multiplier===2);
             document.getElementById('btn-triple').classList.toggle('active', state.multiplier===3);
         }
 
+        // --- STATS UI & LOGIC ---
         function showStats() {
-            let content = document.getElementById('stats-content'); let html = "";
-            state.players.forEach(p => {
-                let avg = p.totalDarts > 0 ? (p.totalScore/p.totalDarts*3).toFixed(2) : "0.00";
-                html += `<div style="margin-bottom:20px; border:1px solid #444; padding:10px; border-radius:5px;">
-                    <h3 style="color:#f39c12; margin:0;">${p.name}</h3><p>Átlag: <strong>${avg}</strong></p>
-                    <table class="stats-table"><tr><th>Dobás</th><th>Darab</th></tr>`;
-                let sorted = Object.entries(p.hits).sort((a,b)=>b[1]-a[1]);
-                sorted.forEach(([k,v])=>{html+=`<tr><td>${k}</td><td>${v}</td></tr>`});
-                if(sorted.length===0) html+="<tr><td colspan='2'>-</td></tr>"; html+=`</table></div>`;
+            let modal = document.getElementById('stats-modal');
+            let nav = document.getElementById('stats-nav');
+            let body = document.getElementById('stats-body');
+            let allStats = getPersistentStats();
+            let players = Object.keys(allStats);
+            
+            nav.innerHTML = "";
+            if(players.length > 0) {
+                players.forEach((pName, idx) => {
+                    let tab = document.createElement("div");
+                    tab.className = `stat-tab ${idx===0 ? 'active' : ''}`;
+                    tab.innerText = pName;
+                    tab.onclick = () => renderPlayerStats(pName);
+                    nav.appendChild(tab);
+                });
+                renderPlayerStats(players[0]);
+            } else {
+                body.innerHTML = "<p style='color:white; padding:20px;'>Nincs még rögzített adat. Dobj párat!</p>";
+            }
+            
+            let historyTab = document.createElement("div");
+            historyTab.className = "stat-tab";
+            historyTab.innerText = "📜 Napló";
+            historyTab.onclick = () => renderMatchHistory();
+            nav.appendChild(historyTab);
+            
+            // ÚJ: Dobott tab
+            let throwsTab = document.createElement("div");
+            throwsTab.className = "stat-tab";
+            throwsTab.innerText = "🎯 Dobott";
+            throwsTab.onclick = () => renderThrowStats();
+            nav.appendChild(throwsTab);
+            
+            modal.style.display = "block";
+        }
+
+        function renderPlayerStats(pName) {
+            let allStats = getPersistentStats();
+            let p = allStats[pName];
+            let body = document.getElementById('stats-body');
+            document.querySelectorAll('.stat-tab').forEach(t => t.classList.toggle('active', t.innerText === pName));
+
+            let avg = p.totalDarts > 0 ? (p.totalScore / p.totalDarts * 3).toFixed(2) : "0.00";
+            
+            body.innerHTML = `
+                <div class="stat-grid">
+                    <div class="stat-box"><div class="stat-val">${avg}</div><div class="stat-lbl">Átlag (3 nyíl)</div></div>
+                    <div class="stat-box"><div class="stat-val">${p.c180 || 0}</div><div class="stat-lbl">180</div></div>
+                    <div class="stat-box"><div class="stat-val">${p.c140 || 0}</div><div class="stat-lbl">140+</div></div>
+                    <div class="stat-box"><div class="stat-val">${p.c100 || 0}</div><div class="stat-lbl">100+</div></div>
+                    <div class="stat-box"><div class="stat-val">${p.bestLeg === 999 ? '-' : p.bestLeg}</div><div class="stat-lbl">Legjobb Leg</div></div>
+                    <div class="stat-box"><div class="stat-val">${p.highestCheckout || 0}</div><div class="stat-lbl">Max Kiszálló</div></div>
+                    <div class="stat-box"><div class="stat-val">${p.wins || 0}</div><div class="stat-lbl">Győzelem</div></div>
+                    <div class="stat-box"><div class="stat-val">${p.totalDarts}</div><div class="stat-lbl">Összes Dobás</div></div>
+                </div>
+                <h3>Találati Hőtérkép</h3>
+                <div id="heatmap-container"></div>
+            `;
+            setTimeout(() => drawHeatmap(p.hits), 10);
+        }
+
+        function renderMatchHistory() {
+            let body = document.getElementById('stats-body');
+            document.querySelectorAll('.stat-tab').forEach(t => t.classList.toggle('active', t.innerText.includes("Napló")));
+            let history = getMatchHistory();
+            
+            if(history.length === 0) {
+                body.innerHTML = "<p>Nincs még rögzített meccs.</p>"; return;
+            }
+            
+            let html = `<div class="history-list">`;
+            history.forEach(match => {
+                let playersInfo = match.players.map(p => `${p.name} (${p.score}, Avg: ${p.avg})`).join(" vs ");
+                html += `
+                    <div class="history-item">
+                        <div class="h-date">${match.date}</div>
+                        <div class="h-match">${playersInfo}</div>
+                        <div class="h-score">Nyertes: ${match.winner}</div>
+                    </div>`;
             });
-            content.innerHTML = html; document.getElementById('stats-modal').style.display="block";
+            html += `</div>`;
+            body.innerHTML = html;
+        }
+
+        // ÚJ: Dobott statisztika
+        function renderThrowStats() {
+            let body = document.getElementById('stats-body');
+            document.querySelectorAll('.stat-tab').forEach(t => t.classList.toggle('active', t.innerText.includes("Dobott")));
+            
+            let allStats = getPersistentStats();
+            let players = Object.keys(allStats);
+            if(players.length === 0) { body.innerHTML = "<p>Nincs adat.</p>"; return; }
+
+            // Flatten data: [{player, key, count, val}, ...]
+            let flatData = [];
+            players.forEach(pName => {
+                let hits = allStats[pName].hits;
+                for(let key in hits) {
+                    // key parse: T20, S5, DBull, MISS...
+                    let val = 0;
+                    if(key === "MISS" || key === "0") val = 0;
+                    else if(key === "SBull" || key === "25") val = 25;
+                    else if(key === "DBull" || key === "BULL") val = 50;
+                    else {
+                        // S20 -> 20, D20 -> 40...
+                        let num = parseInt(key.match(/\d+/)[0]);
+                        if(key.startsWith('D')) val = num * 2;
+                        else if(key.startsWith('T')) val = num * 3;
+                        else val = num;
+                    }
+                    flatData.push({ player: pName, key: key, count: hits[key], val: val });
+                }
+            });
+
+            // Sorting
+            flatData.sort((a, b) => {
+                let res = 0;
+                if (throwSort.col === 'count') res = b.count - a.count; // count desc by default
+                else if (throwSort.col === 'val') res = b.val - a.val;
+                else if (throwSort.col === 'key') res = a.key.localeCompare(b.key);
+                else if (throwSort.col === 'player') res = a.player.localeCompare(b.player);
+                
+                return throwSort.asc ? -res : res;
+            });
+
+            let html = `
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable-th ${throwSort.col==='player'?(throwSort.asc?'asc':'desc'):''}" onclick="sortThrows('player')">Játékos</th>
+                            <th class="sortable-th ${throwSort.col==='key'?(throwSort.asc?'asc':'desc'):''}" onclick="sortThrows('key')">Dobás</th>
+                            <th class="sortable-th ${throwSort.col==='val'?(throwSort.asc?'asc':'desc'):''}" onclick="sortThrows('val')">Érték</th>
+                            <th class="sortable-th ${throwSort.col==='count'?(throwSort.asc?'asc':'desc'):''}" onclick="sortThrows('count')">Darab</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            flatData.forEach(row => {
+                html += `<tr><td>${row.player}</td><td>${row.key}</td><td>${row.val}</td><td>${row.count}</td></tr>`;
+            });
+            html += `</tbody></table>`;
+            
+            body.innerHTML = html;
+        }
+
+        function sortThrows(col) {
+            if (throwSort.col === col) throwSort.asc = !throwSort.asc;
+            else { throwSort.col = col; throwSort.asc = false; } // Default desc
+            renderThrowStats();
+        }
+
+        function drawHeatmap(hits) {
+            let container = document.getElementById('heatmap-container');
+            if(!container) return;
+            container.innerHTML = ""; 
+            
+            let ns = "http://www.w3.org/2000/svg";
+            let svg = document.createElementNS(ns, "svg");
+            svg.setAttribute("viewBox", "-200 -200 400 400");
+            
+            let maxHit = 0;
+            for(let key in hits) { if(hits[key] > maxHit) maxHit = hits[key]; }
+            
+            function getColor(count) {
+                if(!count) return "#333";
+                let ratio = count / maxHit;
+                let hue = 240 - (ratio * 240); 
+                return `hsl(${hue}, 70%, 50%)`;
+            }
+            
+            const r_bull = 10; const r_outer = 20; 
+            const r_tri_in = 90; const r_tri_out = 100; 
+            const r_dbl_in = 150; const r_dbl_out = 160;
+            
+            sectorOrder.forEach((num, i) => {
+                let angleStep = 360 / 20; 
+                let startAngleDeg = (i * angleStep) - 90 - (angleStep / 2);
+                let endAngleDeg = startAngleDeg + angleStep;
+                
+                function createArc(innerR, outerR, typePrefix) {
+                    let key = typePrefix + num; 
+                    let count = hits[key] || 0;
+                    let color = getColor(count);
+                    
+                    let startRad = startAngleDeg * Math.PI / 180;
+                    let endRad = endAngleDeg * Math.PI / 180;
+                    
+                    let x1 = outerR * Math.cos(startRad); let y1 = outerR * Math.sin(startRad);
+                    let x2 = outerR * Math.cos(endRad); let y2 = outerR * Math.sin(endRad);
+                    let x3 = innerR * Math.cos(endRad); let y3 = innerR * Math.sin(endRad);
+                    let x4 = innerR * Math.cos(startRad); let y4 = innerR * Math.sin(startRad);
+                    
+                    let path = document.createElementNS(ns, "path");
+                    let d = `M ${x1} ${y1} A ${outerR} ${outerR} 0 0 1 ${x2} ${y2} L ${x3} ${y3} A ${innerR} ${innerR} 0 0 0 ${x4} ${y4} Z`;
+                    path.setAttribute("d", d); path.setAttribute("fill", color); path.setAttribute("stroke", "#111"); path.setAttribute("stroke-width", "1");
+                    let title = document.createElementNS(ns, "title"); title.textContent = `${key}: ${count}`; path.appendChild(title);
+                    svg.appendChild(path);
+                }
+                
+                createArc(r_dbl_in, r_dbl_out, "D"); 
+                createArc(r_tri_out, r_dbl_in, "S"); 
+                createArc(r_tri_in, r_tri_out, "T"); 
+                createArc(r_outer, r_tri_in, "S");
+                
+                let textR = 180;
+                let midAngleRad = (startAngleDeg + angleStep/2) * Math.PI / 180;
+                let tx = textR * Math.cos(midAngleRad); let ty = textR * Math.sin(midAngleRad);
+                let text = document.createElementNS(ns, "text");
+                text.setAttribute("x", tx); text.setAttribute("y", ty); text.setAttribute("class", "sector-text"); text.textContent = num;
+                svg.appendChild(text);
+            });
+            
+            function createCircle(r, key) {
+                let count = hits[key] || 0;
+                let circle = document.createElementNS(ns, "circle");
+                circle.setAttribute("cx", 0); circle.setAttribute("cy", 0); circle.setAttribute("r", r);
+                circle.setAttribute("fill", getColor(count)); circle.setAttribute("stroke", "#111");
+                let title = document.createElementNS(ns, "title"); title.textContent = `${key}: ${count}`; circle.appendChild(title);
+                svg.appendChild(circle);
+            }
+            createCircle(r_outer, "SBull"); createCircle(r_bull, "DBull");
+            container.appendChild(svg);
         }
         function closeStats(){document.getElementById('stats-modal').style.display="none";}
 
